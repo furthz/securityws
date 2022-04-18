@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.8](https://github.com/furthz/securityws/compare/v1.0.7...v1.0.8) (2022-04-18)
+
+
+### Bug Fixes
+
+* Correccion nombre app ([2a46925](https://github.com/furthz/securityws/commit/2a46925729cac5f598361f54cab25d03fa7440f8))
+
 ### [1.0.7](https://github.com/furthz/securityws/compare/v1.0.6...v1.0.7) (2022-04-18)
 
 
