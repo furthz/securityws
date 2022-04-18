@@ -1,8 +1,8 @@
 {
   "name": "capacniam-securityws",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
-  "main": "index.js",
+  "main": "/dist/cognitoAuth.js",
   "scripts": {
     "build": "tsc",
     "release": "standard-version && git push --follow-tags && npm publish"
