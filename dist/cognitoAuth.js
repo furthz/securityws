@@ -11,7 +11,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CognitoAuth = void 0;
 const aws_sdk_1 = require("aws-sdk");
 const fs_1 = __importDefault(require("fs"));
 const request_1 = __importDefault(require("request"));
@@ -27,22 +29,26 @@ const TABLE_CLIENT = process.env.TABLE_CLIENT;
 const REGION = process.env.REGION;
 class AuthError extends Error {
 }
-var dynamo = new aws_sdk_1.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION });
-var poolsDictionary = {};
-const cognitoAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+class CognitoAuth {
+}
+exports.CognitoAuth = CognitoAuth;
+_a = CognitoAuth;
+CognitoAuth.dynamo = new aws_sdk_1.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION });
+CognitoAuth.poolsDictionary = {};
+CognitoAuth.cognitoAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
-        const pemsDownloadProm = yield _init(id_client);
+        const pemsDownloadProm = yield CognitoAuth.init(id_client);
         //verificación usando el archivo JWKS
-        _verifyMiddleWare(pemsDownloadProm, req, res, next);
+        CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next);
     }
     catch (err) {
         console.error(err);
     }
 });
-const getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+CognitoAuth.getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c, _d;
     let params = {
         TableName: TABLE_CLIENT,
         Key: {
@@ -57,12 +63,12 @@ const getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, function*
     };
     try {
         //validar si ya existe en el dictionario
-        if (poolsDictionary[id_client]) {
-            let result = yield dynamo.get(params).promise();
-            cognito.id = (_a = result.Item) === null || _a === void 0 ? void 0 : _a.id;
-            cognito.client_id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.aws_cognito_clientapp_id;
-            cognito.user_pool = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_userpool_id;
-            poolsDictionary[id_client] = cognito;
+        if (CognitoAuth.poolsDictionary[id_client]) {
+            let result = yield CognitoAuth.dynamo.get(params).promise();
+            cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
+            cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
+            cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;
+            CognitoAuth.poolsDictionary[id_client] = cognito;
         }
     }
     catch (e) {
@@ -71,15 +77,15 @@ const getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, function*
         }
     }
 });
-const _init = (id_client) => {
+CognitoAuth.init = (id_client) => {
     return new Promise((resolve, reject) => {
         let existSign = fs_1.default.existsSync(`/usr/${id_client}.pem`);
         if (!existSign) {
             //cargar la data del tabla cliente
-            getDataClient(id_client)
+            CognitoAuth.getDataClient(id_client)
                 .then((result) => {
                 //ruta de donde bajar la firma publica
-                let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${poolsDictionary[id_client].user_pool}`;
+                let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
                 const options = {
                     url: `${ISSUER}/.well-known/jwks.json`,
                     json: true
@@ -107,8 +113,8 @@ const _init = (id_client) => {
         }
     });
 };
-const _verifyMiddleWare = (pem, req, res, next) => {
-    _verify(pem, req.get(HEADER_AUTHORIZATION), req.get(HEADER_CLIENT))
+CognitoAuth.verifyMiddleWare = (pem, req, res, next) => {
+    CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION), req.get(HEADER_CLIENT))
         .then((decoded) => {
         if (typeof decoded !== "string") {
             //Asignar al Request información del usuario autenticado
@@ -134,8 +140,8 @@ const _verifyMiddleWare = (pem, req, res, next) => {
         res.status(status).send(err.message || err);
     });
 };
-const _verify = (pems, auth, id_client) => {
-    let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${poolsDictionary[id_client].user_pool}`;
+CognitoAuth.verify = (pems, auth, id_client) => {
+    let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
     return new Promise((resolve, reject) => {
         //verificar el formato del auth en el header
         if (!auth || auth.length < 10) {
@@ -176,7 +182,7 @@ const _verify = (pems, auth, id_client) => {
                 }
                 //validar que client_id corresponda con el CLIENT_ID del USER_POOL
                 const clientId = (decodeAndVerified.aud || decodeAndVerified.client_id);
-                if (clientId !== poolsDictionary[id_client].client_id) {
+                if (clientId !== CognitoAuth.poolsDictionary[id_client].client_id) {
                     return reject(new AuthError('Authorization header contiene un token inválido.')); // don't return detailed info to the caller
                 }
             }
@@ -184,4 +190,5 @@ const _verify = (pems, auth, id_client) => {
         });
     });
 };
+//export default cognitoAuth
 //# sourceMappingURL=cognitoAuth.js.map
