@@ -191,4 +191,3 @@ CognitoAuth.verify = (pems, auth, id_client) => {
     });
 };
 //export default cognitoAuth
-//# sourceMappingURL=cognitoAuth.js.map
