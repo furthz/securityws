@@ -39,10 +39,10 @@ interface IAuthenticatedRequest extends Request {
 
 export class CognitoAuth {
 
-    static dynamo: DocumentClient = new DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION })
-    static poolsDictionary: { [key: string]: ICognito } = {}
+    private static dynamo: DocumentClient = new DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION })
+    private static poolsDictionary: { [key: string]: ICognito } = {}
 
-    static cognitoAuth = async (req: Request, res: Response, next: any) => {
+    public static process = async (req: Request, res: Response, next: any) => {
         try {
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
@@ -55,7 +55,7 @@ export class CognitoAuth {
         }
     }
 
-    static getDataClient = async (id_client: string) => {
+    private static getDataClient = async (id_client: string) => {
 
         let params: DynamoDB.DocumentClient.GetItemInput = {
             TableName: TABLE_CLIENT!,
@@ -89,7 +89,7 @@ export class CognitoAuth {
         }
     }
 
-    static init = (id_client: string) => {
+    private static init = (id_client: string) => {
         return new Promise<{ [key: string]: string }>((resolve, reject) => {
             let existSign = fs.existsSync(`/usr/${id_client}.pem`)
 
@@ -128,7 +128,7 @@ export class CognitoAuth {
         })
     }
 
-    static verifyMiddleWare = (pem: { [key: string]: string }, req: IAuthenticatedRequest, res: Response, next: any) => {
+    private static verifyMiddleWare = (pem: { [key: string]: string }, req: IAuthenticatedRequest, res: Response, next: any) => {
 
         CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION)!, req.get(HEADER_CLIENT)!)
             .then((decoded) => {
@@ -162,7 +162,7 @@ export class CognitoAuth {
             })
     }
 
-    static verify = (pems: { [key: string]: string }, auth: string, id_client: string): Promise<JwtPayload | string> => {
+    private static verify = (pems: { [key: string]: string }, auth: string, id_client: string): Promise<JwtPayload | string> => {
 
         let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`
 

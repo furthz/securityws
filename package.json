@@ -2,7 +2,7 @@
   "name": "nexuxsecurityws",
   "version": "1.0.9",
   "description": "",
-  "main": "/dist/cognitoAuth.js",
+  "main": "dist/cognitoAuth.js",
   "scripts": {
     "build": "tsc",
     "release": "standard-version && git push --follow-tags"

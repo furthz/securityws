@@ -35,7 +35,7 @@ exports.CognitoAuth = CognitoAuth;
 _a = CognitoAuth;
 CognitoAuth.dynamo = new aws_sdk_1.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION });
 CognitoAuth.poolsDictionary = {};
-CognitoAuth.cognitoAuth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
