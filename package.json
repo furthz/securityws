@@ -1,5 +1,5 @@
 {
-  "name": "capacniam-securityws",
+  "name": "nexuxsecurityws",
   "version": "1.0.7",
   "description": "",
   "main": "/dist/cognitoAuth.js",
