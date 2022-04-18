@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import { Handler } from 'express';
 export declare class CognitoAuth {
     private static dynamo;
     private static poolsDictionary;
-    static process: (req: Request, res: Response, next: any) => Promise<void>;
+    static process: Handler;
     private static getDataClient;
     private static init;
     private static verifyMiddleWare;

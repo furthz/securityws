@@ -21,8 +21,10 @@
   "dependencies": {
     "aws-sdk": "^2.1116.0",
     "express": "^4.17.3",
+    "express-request-id": "^2.0.1",
     "jsonwebtoken": "^8.5.1",
     "jwk-to-pem": "^2.0.5",
+    "nexuxlog": "^1.1.1",
     "request": "^2.88.2"
   },
   "devDependencies": {

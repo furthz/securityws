@@ -1,11 +1,13 @@
 
-import { Request, Response } from 'express';
+import { Request, Response, Handler } from 'express';
 import { DynamoDB } from "aws-sdk";
 import fs from 'fs'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import request from 'request'
 import jwkToPem from 'jwk-to-pem'
 import jwt, { JwtPayload } from 'jsonwebtoken'
+import { Level, Logger } from 'nexuxlog';
+
 
 const MAX_TOKEN_AGE = 60 * 60 * 1 // 3600 seconds
 
@@ -37,17 +39,21 @@ interface IAuthenticatedRequest extends Request {
     user?: IUser
 }
 
-export class CognitoAuth {
+export class CognitoAuth  {
+ 
 
     private static dynamo: DocumentClient = new DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION })
     private static poolsDictionary: { [key: string]: ICognito } = {}
 
-    public static process = async (req: Request, res: Response, next: any) => {
+    public static process: Handler = async (req, res, next) => {
         try {
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
+            Logger.message(Level.debug, req.body, req.body.id.toString(), "ingreso a la validacion")
 
             const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client)
+            Logger.message(Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica")
+
             //verificación usando el archivo JWKS
             CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next)
         } catch (err) {
@@ -64,6 +70,7 @@ export class CognitoAuth {
             },
             ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
         }
+        Logger.message(Level.debug, params, id_client, "parametros de busqueda en la tabla cliente")
 
         let cognito: ICognito = {
             id: "0",
@@ -78,11 +85,15 @@ export class CognitoAuth {
                 cognito.id = result.Item?.id
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id
                 cognito.user_pool = result.Item?.aws_cognito_userpool_id
+
+                Logger.message(Level.debug, result, id_client, "resultado en la tabla cliente")
+                
                 CognitoAuth.poolsDictionary[id_client] = cognito
             }
 
         } catch (e) {
             if (e instanceof Error) {
+                Logger.message(Level.error, e, id_client, "Error en la busqueda de la BD")
                 throw new Error(e.message)
             }
 
