@@ -49,10 +49,10 @@ export class CognitoAuth  {
         try {
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
-            Logger.message(Level.debug, req.body, req.body.id.toString(), "ingreso a la validacion")
+            Logger.message(Level.debug, req.body, "req.body.id.toString()", "ingreso a la validacion")
 
             const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client)
-            Logger.message(Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica")
+            Logger.message(Level.debug, pemsDownloadProm, "req.body.id.toString()", "Llave publica")
 
             //verificación usando el archivo JWKS
             CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next)
@@ -70,7 +70,7 @@ export class CognitoAuth  {
             },
             ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
         }
-        Logger.message(Level.debug, params, id_client, "parametros de busqueda en la tabla cliente")
+        Logger.message(Level.debug, params, "id_client", "parametros de busqueda en la tabla cliente")
 
         let cognito: ICognito = {
             id: "0",
@@ -86,14 +86,14 @@ export class CognitoAuth  {
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id
                 cognito.user_pool = result.Item?.aws_cognito_userpool_id
 
-                Logger.message(Level.debug, result, id_client, "resultado en la tabla cliente")
+                Logger.message(Level.debug, result, "id_client", "resultado en la tabla cliente")
                 
                 CognitoAuth.poolsDictionary[id_client] = cognito
             }
 
         } catch (e) {
             if (e instanceof Error) {
-                Logger.message(Level.error, e, id_client, "Error en la busqueda de la BD")
+                Logger.message(Level.error, e, "id_client", "Error en la busqueda de la BD")
                 throw new Error(e.message)
             }
 

@@ -40,9 +40,9 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     try {
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, req.body.id.toString(), "ingreso a la validacion");
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, "req.body.id.toString()", "ingreso a la validacion");
         const pemsDownloadProm = yield CognitoAuth.init(id_client);
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica");
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, "req.body.id.toString()", "Llave publica");
         //verificación usando el archivo JWKS
         CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next);
     }
@@ -59,7 +59,7 @@ CognitoAuth.getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, fun
         },
         ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
     };
-    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, params, id_client, "parametros de busqueda en la tabla cliente");
+    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, params, "id_client", "parametros de busqueda en la tabla cliente");
     let cognito = {
         id: "0",
         client_id: "0",
@@ -72,13 +72,13 @@ CognitoAuth.getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, fun
             cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
             cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
             cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, result, id_client, "resultado en la tabla cliente");
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, result, "id_client", "resultado en la tabla cliente");
             CognitoAuth.poolsDictionary[id_client] = cognito;
         }
     }
     catch (e) {
         if (e instanceof Error) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, e, id_client, "Error en la busqueda de la BD");
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, e, "id_client", "Error en la busqueda de la BD");
             throw new Error(e.message);
         }
     }
