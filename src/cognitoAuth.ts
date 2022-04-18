@@ -25,7 +25,7 @@ interface ICognito {
     user_pool: string
 }
 
-export interface IUser {
+interface IUser {
     sub: string,
     token_use: string,
     scope?: string,
@@ -33,7 +33,7 @@ export interface IUser {
     email?: string
 }
 
-export interface IAuthenticatedRequest extends Request {
+interface IAuthenticatedRequest extends Request {
     user?: IUser
 }
 
@@ -223,3 +223,5 @@ const _verify = (pems: { [key: string]: string }, auth: string, id_client:string
 
     })
 }
+
+export default cognitoAuth
