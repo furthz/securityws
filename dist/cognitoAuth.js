@@ -83,6 +83,9 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
         //validar si ya existe en el dictionario
         if (!CognitoAuth.poolsDictionary[id_client]) {
             let result = yield CognitoAuth.dynamo.get(params).promise();
+            if (!result) {
+                throw new Error(`El cliente: ${id_client} no existe`);
+            }
             cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
             cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
             cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;

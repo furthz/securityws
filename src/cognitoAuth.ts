@@ -97,6 +97,11 @@ export class CognitoAuth {
             //validar si ya existe en el dictionario
             if (!CognitoAuth.poolsDictionary[id_client]) {
                 let result = await CognitoAuth.dynamo.get(params).promise()
+
+                if (!result) {
+                    throw new Error(`El cliente: ${id_client} no existe`)
+                }
+
                 cognito.id = result.Item?.id
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id
                 cognito.user_pool = result.Item?.aws_cognito_userpool_id
