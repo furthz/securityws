@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.27](https://github.com/furthz/securityws/compare/v1.0.26...v1.0.27) (2022-04-19)
+
+
+### Bug Fixes
+
+* Control de execpciones cliente ([0ca10d0](https://github.com/furthz/securityws/commit/0ca10d0f627e5dff70502de371ff2225c176ab30))
+
 ### [1.0.26](https://github.com/furthz/securityws/compare/v1.0.25...v1.0.26) (2022-04-19)
 
 
