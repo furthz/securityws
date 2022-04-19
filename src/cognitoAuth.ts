@@ -67,7 +67,7 @@ export class CognitoAuth {
         } catch (err) {
             if (err instanceof Error) {
                 Logger.message(Level.error, {}, "req.id.toString()", err.message)
-                //next(err)
+                next(err)
             }
         }
     }
@@ -79,22 +79,23 @@ export class CognitoAuth {
      */
     private static getDataClient = async (id_client: string, transacion_id: string) => {
 
-        let params: DynamoDB.DocumentClient.GetItemInput = {
-            TableName: TABLE_CLIENT!,
-            Key: {
-                id: id_client
-            },
-            ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
-        }
-        Logger.message(Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente")
-
-        let cognito: ICognito = {
-            id: "0",
-            client_id: "0",
-            user_pool: "0"
-        }
-
         try {
+
+            let params: DynamoDB.DocumentClient.GetItemInput = {
+                TableName: TABLE_CLIENT!,
+                Key: {
+                    id: id_client
+                },
+                ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
+            }
+            Logger.message(Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente")
+
+            let cognito: ICognito = {
+                id: "0",
+                client_id: "0",
+                user_pool: "0"
+            }
+
             //validar si ya existe en el dictionario
             if (!CognitoAuth.poolsDictionary[id_client]) {
                 let result = await CognitoAuth.dynamo.get(params).promise()
@@ -107,10 +108,10 @@ export class CognitoAuth {
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id
                 cognito.user_pool = result.Item?.aws_cognito_userpool_id
 
-                Logger.message(Level.debug, result, transacion_id, "resultado en la tabla cliente")
-
                 CognitoAuth.poolsDictionary[id_client] = cognito
-            }else{
+                Logger.message(Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente")
+
+            } else {
                 Logger.message(Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados")
             }
 
@@ -171,7 +172,7 @@ export class CognitoAuth {
                     }).catch((error) => {
                         if (error instanceof Error) {
                             Logger.message(Level.error, {}, transacion_id, "GetCliente")
-                            return reject(new Error(error.message))                            
+                            return reject(new Error(error.message))
                         }
                     })
 
@@ -238,73 +239,84 @@ export class CognitoAuth {
      */
     private static verify = (pems: { [key: string]: string }, auth: string, id_client: string, transacion_id: string): Promise<JwtPayload | string> => {
 
-        let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`
-        Logger.message(Level.debug, { ISSUER }, transacion_id, "verificación del token")
-
         return new Promise((resolve, reject) => {
 
-            //verificar el formato del auth en el header
-            if (!auth || auth.length < 10) {
-                Logger.message(Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos")
-                return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "))
-            }
+            try {
 
-            const authPrefix = auth.substring(0, 7).toLowerCase()
-            if (authPrefix !== 'bearer ') {
-                Logger.message(Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer")
-                return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'))
-            }
+                let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`
+                Logger.message(Level.debug, { ISSUER }, transacion_id, "verificación del token")
 
-            //Obtener el token
-            const token = auth.substring(7)
-
-            // Decodificar el token JWT para ver si hace match con la llave
-            const decodedNotVerified = jwt.decode(token, { complete: true })
-
-            //Verificar que exista el token decodificado
-            if (!decodedNotVerified) {
-                Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido")
-                return reject(new AuthError('Authorization header contiene un token inválido'))
-            }
-
-            //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
-            if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
-                Logger.message(Level.error, { id_client, auth }, transacion_id, "el KID no coincide")
-                return reject(new AuthError("Authorization header contiene un token inválido"))
-            }
-
-            //Decodificar la firma con la Llave publica
-            jwt.verify(token, pems[decodedNotVerified.header.kid], { issuer: ISSUER, maxAge: MAX_TOKEN_AGE }, (err, decodeAndVerified) => {
-
-                if (err) {
-                    if (err instanceof jwt.TokenExpiredError) {
-                        Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorzation header expirado")
-                        return reject(new AuthError("Authorization header contiene un JWT que ha expirado en: " + err.expiredAt.toISOString()))
-                    } else {
-                        Logger.message(Level.error, { id_client, auth }, transacion_id, "JWT inválido")
-                        return reject(new AuthError("Authorization header contiene un JWT inválido"))
-                    }
+                //verificar el formato del auth en el header
+                if (!auth || auth.length < 10) {
+                    Logger.message(Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos")
+                    return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "))
                 }
 
-                //La firma coincide y sabemos que el token proviene de una instancia de Cognito
-                //verificar el Claims
-
-                if (typeof decodeAndVerified !== "string") {
-                    //validar que token_use = 'access'
-                    if (ALLOWED_TOKEN_USES.indexOf(decodeAndVerified!.token_use) === -1) {
-                        Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorization contiene token inválido no ACCESS")
-                        return reject(new AuthError('Authorization header contiene un token inválido.'))
-                    }
-                    //validar que client_id corresponda con el CLIENT_ID del USER_POOL
-                    const clientId = (decodeAndVerified!.aud || decodeAndVerified!.client_id)
-                    if (clientId !== CognitoAuth.poolsDictionary[id_client].client_id) {
-                        Logger.message(Level.error, { id_client, auth }, transacion_id, "Authozation contine token inválido CLIENT_ID no coincide")
-                        return reject(new AuthError('Authorization header contiene un token inválido.')) // don't return detailed info to the caller
-                    }
+                const authPrefix = auth.substring(0, 7).toLowerCase()
+                if (authPrefix !== 'bearer ') {
+                    Logger.message(Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer")
+                    return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'))
                 }
 
-                return resolve(decodeAndVerified!)
-            })
+                //Obtener el token
+                const token = auth.substring(7)
+
+                // Decodificar el token JWT para ver si hace match con la llave
+                const decodedNotVerified = jwt.decode(token, { complete: true })
+
+                //Verificar que exista el token decodificado
+                if (!decodedNotVerified) {
+                    Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido")
+                    return reject(new AuthError('Authorization header contiene un token inválido'))
+                }
+
+                //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
+                if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
+                    Logger.message(Level.error, { id_client, auth }, transacion_id, "el KID no coincide")
+                    return reject(new AuthError("Authorization header contiene un token inválido"))
+                }
+
+                //Decodificar la firma con la Llave publica
+                jwt.verify(token, pems[decodedNotVerified.header.kid], { issuer: ISSUER, maxAge: MAX_TOKEN_AGE }, (err, decodeAndVerified) => {
+
+                    if (err) {
+                        if (err instanceof jwt.TokenExpiredError) {
+                            Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorzation header expirado")
+                            return reject(new AuthError("Authorization header contiene un JWT que ha expirado en: " + err.expiredAt.toISOString()))
+                        } else {
+                            Logger.message(Level.error, { id_client, auth }, transacion_id, "JWT inválido")
+                            return reject(new AuthError("Authorization header contiene un JWT inválido"))
+                        }
+                    }
+
+                    //La firma coincide y sabemos que el token proviene de una instancia de Cognito
+                    //verificar el Claims
+
+                    if (typeof decodeAndVerified !== "string") {
+                        //validar que token_use = 'access'
+                        if (ALLOWED_TOKEN_USES.indexOf(decodeAndVerified!.token_use) === -1) {
+                            Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorization contiene token inválido no ACCESS")
+                            return reject(new AuthError('Authorization header contiene un token inválido.'))
+                        }
+                        //validar que client_id corresponda con el CLIENT_ID del USER_POOL
+                        const clientId = (decodeAndVerified!.aud || decodeAndVerified!.client_id)
+                        if (clientId !== CognitoAuth.poolsDictionary[id_client].client_id) {
+                            Logger.message(Level.error, { id_client, auth }, transacion_id, "Authozation contine token inválido CLIENT_ID no coincide")
+                            return reject(new AuthError('Authorization header contiene un token inválido.')) // don't return detailed info to the caller
+                        }
+                    }
+
+                    return resolve(decodeAndVerified!)
+                })
+
+            } catch (e) {
+                if (e instanceof Error) {
+                    Logger.message(Level.error, {}, transacion_id, e.message)
+                    throw new Error (e.message)
+                }
+            }
+
+
 
         })
     }

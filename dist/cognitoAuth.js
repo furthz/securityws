@@ -56,7 +56,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     catch (err) {
         if (err instanceof Error) {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, "req.id.toString()", err.message);
-            //next(err)
+            next(err);
         }
     }
 });
@@ -67,20 +67,20 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
  */
 CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void 0, void 0, function* () {
     var _b, _c, _d;
-    let params = {
-        TableName: TABLE_CLIENT,
-        Key: {
-            id: id_client
-        },
-        ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
-    };
-    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente");
-    let cognito = {
-        id: "0",
-        client_id: "0",
-        user_pool: "0"
-    };
     try {
+        let params = {
+            TableName: TABLE_CLIENT,
+            Key: {
+                id: id_client
+            },
+            ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
+        };
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente");
+        let cognito = {
+            id: "0",
+            client_id: "0",
+            user_pool: "0"
+        };
         //validar si ya existe en el dictionario
         if (!CognitoAuth.poolsDictionary[id_client]) {
             let result = yield CognitoAuth.dynamo.get(params).promise();
@@ -90,8 +90,8 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
             cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
             cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
             cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, result, transacion_id, "resultado en la tabla cliente");
             CognitoAuth.poolsDictionary[id_client] = cognito;
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente");
         }
         else {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados");
@@ -207,62 +207,70 @@ CognitoAuth.verifyMiddleWare = (pem, req, res, next) => {
  * @returns
  */
 CognitoAuth.verify = (pems, auth, id_client, transacion_id) => {
-    let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
-    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { ISSUER }, transacion_id, "verificación del token");
     return new Promise((resolve, reject) => {
-        //verificar el formato del auth en el header
-        if (!auth || auth.length < 10) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos");
-            return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "));
-        }
-        const authPrefix = auth.substring(0, 7).toLowerCase();
-        if (authPrefix !== 'bearer ') {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer");
-            return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'));
-        }
-        //Obtener el token
-        const token = auth.substring(7);
-        // Decodificar el token JWT para ver si hace match con la llave
-        const decodedNotVerified = jsonwebtoken_1.default.decode(token, { complete: true });
-        //Verificar que exista el token decodificado
-        if (!decodedNotVerified) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido");
-            return reject(new AuthError('Authorization header contiene un token inválido'));
-        }
-        //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
-        if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "el KID no coincide");
-            return reject(new AuthError("Authorization header contiene un token inválido"));
-        }
-        //Decodificar la firma con la Llave publica
-        jsonwebtoken_1.default.verify(token, pems[decodedNotVerified.header.kid], { issuer: ISSUER, maxAge: MAX_TOKEN_AGE }, (err, decodeAndVerified) => {
-            if (err) {
-                if (err instanceof jsonwebtoken_1.default.TokenExpiredError) {
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorzation header expirado");
-                    return reject(new AuthError("Authorization header contiene un JWT que ha expirado en: " + err.expiredAt.toISOString()));
-                }
-                else {
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "JWT inválido");
-                    return reject(new AuthError("Authorization header contiene un JWT inválido"));
-                }
+        try {
+            let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { ISSUER }, transacion_id, "verificación del token");
+            //verificar el formato del auth en el header
+            if (!auth || auth.length < 10) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos");
+                return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "));
             }
-            //La firma coincide y sabemos que el token proviene de una instancia de Cognito
-            //verificar el Claims
-            if (typeof decodeAndVerified !== "string") {
-                //validar que token_use = 'access'
-                if (ALLOWED_TOKEN_USES.indexOf(decodeAndVerified.token_use) === -1) {
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorization contiene token inválido no ACCESS");
-                    return reject(new AuthError('Authorization header contiene un token inválido.'));
-                }
-                //validar que client_id corresponda con el CLIENT_ID del USER_POOL
-                const clientId = (decodeAndVerified.aud || decodeAndVerified.client_id);
-                if (clientId !== CognitoAuth.poolsDictionary[id_client].client_id) {
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authozation contine token inválido CLIENT_ID no coincide");
-                    return reject(new AuthError('Authorization header contiene un token inválido.')); // don't return detailed info to the caller
-                }
+            const authPrefix = auth.substring(0, 7).toLowerCase();
+            if (authPrefix !== 'bearer ') {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer");
+                return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'));
             }
-            return resolve(decodeAndVerified);
-        });
+            //Obtener el token
+            const token = auth.substring(7);
+            // Decodificar el token JWT para ver si hace match con la llave
+            const decodedNotVerified = jsonwebtoken_1.default.decode(token, { complete: true });
+            //Verificar que exista el token decodificado
+            if (!decodedNotVerified) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido");
+                return reject(new AuthError('Authorization header contiene un token inválido'));
+            }
+            //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
+            if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "el KID no coincide");
+                return reject(new AuthError("Authorization header contiene un token inválido"));
+            }
+            //Decodificar la firma con la Llave publica
+            jsonwebtoken_1.default.verify(token, pems[decodedNotVerified.header.kid], { issuer: ISSUER, maxAge: MAX_TOKEN_AGE }, (err, decodeAndVerified) => {
+                if (err) {
+                    if (err instanceof jsonwebtoken_1.default.TokenExpiredError) {
+                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorzation header expirado");
+                        return reject(new AuthError("Authorization header contiene un JWT que ha expirado en: " + err.expiredAt.toISOString()));
+                    }
+                    else {
+                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "JWT inválido");
+                        return reject(new AuthError("Authorization header contiene un JWT inválido"));
+                    }
+                }
+                //La firma coincide y sabemos que el token proviene de una instancia de Cognito
+                //verificar el Claims
+                if (typeof decodeAndVerified !== "string") {
+                    //validar que token_use = 'access'
+                    if (ALLOWED_TOKEN_USES.indexOf(decodeAndVerified.token_use) === -1) {
+                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorization contiene token inválido no ACCESS");
+                        return reject(new AuthError('Authorization header contiene un token inválido.'));
+                    }
+                    //validar que client_id corresponda con el CLIENT_ID del USER_POOL
+                    const clientId = (decodeAndVerified.aud || decodeAndVerified.client_id);
+                    if (clientId !== CognitoAuth.poolsDictionary[id_client].client_id) {
+                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authozation contine token inválido CLIENT_ID no coincide");
+                        return reject(new AuthError('Authorization header contiene un token inválido.')); // don't return detailed info to the caller
+                    }
+                }
+                return resolve(decodeAndVerified);
+            });
+        }
+        catch (e) {
+            if (e instanceof Error) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, e.message);
+                throw new Error(e.message);
+            }
+        }
     });
 };
 //export default cognitoAuth
