@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.26](https://github.com/furthz/securityws/compare/v1.0.25...v1.0.26) (2022-04-19)
+
+
+### Bug Fixes
+
+* control error no client ([e998581](https://github.com/furthz/securityws/commit/e998581b1bc57a6218714236ea300d33b0ed0d31))
+
 ### [1.0.25](https://github.com/furthz/securityws/compare/v1.0.24...v1.0.25) (2022-04-19)
 
 
