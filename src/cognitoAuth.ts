@@ -166,7 +166,10 @@ export class CognitoAuth {
                             resolve(pems)
                         })
                     }).catch((error) => {
-                        reject(new Error(error))
+                        if (error instanceof Error) {
+                            Logger.message(Level.error, {}, transacion_id, "GetCliente")
+                            reject(new Error(error.message))                            
+                        }
                     })
 
             } else { //leer la firma publica

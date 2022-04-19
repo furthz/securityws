@@ -142,7 +142,10 @@ CognitoAuth.init = (id_client, transacion_id) => {
                     resolve(pems);
                 });
             }).catch((error) => {
-                reject(new Error(error));
+                if (error instanceof Error) {
+                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "GetCliente");
+                    reject(new Error(error.message));
+                }
             });
         }
         else { //leer la firma publica
