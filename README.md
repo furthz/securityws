@@ -27,7 +27,7 @@ Se requiere instalar la librería usando el siguiente comando:
 ```
 
 para incorporar en el servicio web, la validación se requiere usar el siguiente código
-```
+```typescript
 //Incorporar el llamado del proceso da validación
 import {CognitoAuth} from "nexuxsecurityws"
 
