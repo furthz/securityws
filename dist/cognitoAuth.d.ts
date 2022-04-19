@@ -1,4 +1,7 @@
 import { Handler } from 'express';
+/**
+ * Clase para realizar la validación de seguridad de acceso a partir de un JWT
+ */
 export declare class CognitoAuth {
     private static dynamo;
     private static poolsDictionary;

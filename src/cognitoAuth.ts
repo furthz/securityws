@@ -39,6 +39,9 @@ interface IAuthenticatedRequest extends Request {
     user?: IUser
 }
 
+/**
+ * Clase para realizar la validación de seguridad de acceso a partir de un JWT
+ */
 export class CognitoAuth {
 
 
@@ -55,6 +58,9 @@ export class CognitoAuth {
         try {
             Logger.message(Level.info, { action: "validacion", id: req.id }, req.id?.toString(), "validacion del header")
 
+            if (!req.get(HEADER_AUTHORIZATION) || !req.get(HEADER_CLIENT)) {
+                throw new AuthError("Es necesario los Headers de Authorization y client_nexux")
+            }
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
             Logger.message(Level.debug, req.body, req.id?.toString(), "ingreso a la validacion")
@@ -254,13 +260,13 @@ export class CognitoAuth {
                 //verificar el formato del auth en el header
                 if (!auth || auth.length < 10) {
                     Logger.message(Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos")
-                    return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "))
+                    return reject(new AuthError("Inválido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "))
                 }
 
                 const authPrefix = auth.substring(0, 7).toLowerCase()
                 if (authPrefix !== 'bearer ') {
                     Logger.message(Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer")
-                    return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'))
+                    return reject(new AuthError('Authorization header esperado en el formato \'Bearer <your_JWT_token>\'.'))
                 }
 
                 //Obtener el token
@@ -326,6 +332,3 @@ export class CognitoAuth {
         })
     }
 }
-
-
-//export default cognitoAuth

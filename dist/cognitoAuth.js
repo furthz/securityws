@@ -30,6 +30,9 @@ const TABLE_CLIENT = process.env.TABLE_CLIENT;
 const REGION = process.env.REGION;
 class AuthError extends Error {
 }
+/**
+ * Clase para realizar la validación de seguridad de acceso a partir de un JWT
+ */
 class CognitoAuth {
 }
 exports.CognitoAuth = CognitoAuth;
@@ -46,6 +49,9 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     var _b, _c, _d, _e, _f;
     try {
         nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { action: "validacion", id: req.id }, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), "validacion del header");
+        if (!req.get(HEADER_AUTHORIZATION) || !req.get(HEADER_CLIENT)) {
+            throw new AuthError("Es necesario los Headers de Authorization y client_nexux");
+        }
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
         nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, (_c = req.id) === null || _c === void 0 ? void 0 : _c.toString(), "ingreso a la validacion");
@@ -224,12 +230,12 @@ CognitoAuth.verify = (pems, auth, id_client, transacion_id) => {
             //verificar el formato del auth en el header
             if (!auth || auth.length < 10) {
                 nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Formato no esperado, menor a 10 digitos");
-                return reject(new AuthError("Invalido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "));
+                return reject(new AuthError("Inválido o ausente Authorization header. Esperado formato \'Bearer <your_JWT_token>\'. "));
             }
             const authPrefix = auth.substring(0, 7).toLowerCase();
             if (authPrefix !== 'bearer ') {
                 nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "El token no tiene el prefijo Bearer");
-                return reject(new AuthError('Authorization header esperdo en el formato \'Bearer <your_JWT_token>\'.'));
+                return reject(new AuthError('Authorization header esperado en el formato \'Bearer <your_JWT_token>\'.'));
             }
             //Obtener el token
             const token = auth.substring(7);
@@ -283,4 +289,3 @@ CognitoAuth.verify = (pems, auth, id_client, transacion_id) => {
         }
     });
 };
-//export default cognitoAuth
