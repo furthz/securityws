@@ -7,13 +7,13 @@ para lo cual se requiere que se añadan a los webservices, los siguientes header
 - client_nexux = Id del cliente de NexUx, ejemplo: soapros
 
 ## Proceso de Validación
-![Validación] (images/ValidacionToken.png)
+![Validacion](images/ValidacionToken.png)
 
 ### Pasos
-1 Buscar en la tabla Cliente con el header client_nexux
-2 Se obtiene los datos del UserPool y del ClientId del paso anterior
-3 Se descarga la Firma pública del UserPool, JWKS
-4 Se valida el Token (Authorization), con ela firma pública
+1. Buscar en la tabla Cliente con el header client_nexux
+2. Se obtiene los datos del UserPool y del ClientId del paso anterior
+3. Se descarga la Firma pública del UserPool, JWKS
+4. Se valida el Token (Authorization), con ela firma pública
 
 ## Dependencias
 Se necesita que el Microservicio que va a exponer el webservice, incluya para el proceso de validación, las siguientes variables de entorno
