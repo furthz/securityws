@@ -56,6 +56,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     catch (err) {
         if (err instanceof Error) {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, "req.id.toString()", err.message);
+            next(err);
         }
     }
 });
@@ -144,7 +145,7 @@ CognitoAuth.init = (id_client, transacion_id) => {
             }).catch((error) => {
                 if (error instanceof Error) {
                     nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "GetCliente");
-                    reject(new Error(error.message));
+                    return reject(new Error(error.message));
                 }
             });
         }

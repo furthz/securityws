@@ -67,6 +67,7 @@ export class CognitoAuth {
         } catch (err) {
             if (err instanceof Error) {
                 Logger.message(Level.error, {}, "req.id.toString()", err.message)
+                next(err)
             }
         }
     }
@@ -168,7 +169,7 @@ export class CognitoAuth {
                     }).catch((error) => {
                         if (error instanceof Error) {
                             Logger.message(Level.error, {}, transacion_id, "GetCliente")
-                            reject(new Error(error.message))                            
+                            return reject(new Error(error.message))                            
                         }
                     })
 
