@@ -3,7 +3,7 @@
 ## Description
 Librería para incluir en todos los webservices de NexUx, para agregar seguridad usando JWT.
 para lo cual se requiere que se añadan a los webservices, los siguientes headers:
-- Authorization = Bearer <JWT>
+- Authorization = Bearer JWT
 - client_nexux = Id del cliente de NexUx, ejemplo: soapros
 
 ## Proceso de Validación
