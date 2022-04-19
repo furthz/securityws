@@ -43,21 +43,22 @@ CognitoAuth.poolsDictionary = {};
  * @param next Siguiente función a procesar de pasar la validación
  */
 CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
+    var _b, _c, _d, _e, _f;
     try {
         nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { action: "validacion", id: req.id }, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), "validacion del header");
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, "req.id.toString()", "ingreso a la validacion");
-        const pemsDownloadProm = yield CognitoAuth.init(id_client, "req.id.toString()");
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, "req.id.toString()", "Llave publica");
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, (_c = req.id) === null || _c === void 0 ? void 0 : _c.toString(), "ingreso a la validacion");
+        const pemsDownloadProm = yield CognitoAuth.init(id_client, (_d = req.id) === null || _d === void 0 ? void 0 : _d.toString());
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, (_e = req.id) === null || _e === void 0 ? void 0 : _e.toString(), "Llave publica");
         //verificación usando el archivo JWKS
         CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next);
     }
     catch (err) {
         if (err instanceof Error) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, "req.id.toString()", err.message);
-            next(err);
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, (_f = req.id) === null || _f === void 0 ? void 0 : _f.toString(), err.message);
+            const status = (err instanceof AuthError ? 401 : 500);
+            res.status(status).json({ message: err.message || err });
         }
     }
 });
@@ -67,7 +68,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
  * @param transacion_id Id de la transacción
  */
 CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e;
+    var _g, _h, _j;
     try {
         let params = {
             TableName: TABLE_CLIENT,
@@ -86,11 +87,11 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
         if (!CognitoAuth.poolsDictionary[id_client]) {
             let result = yield CognitoAuth.dynamo.get(params).promise();
             if (Object.keys(result).length == 0) {
-                throw new Error(`El cliente: ${id_client} no existe`);
+                throw new AuthError(`El cliente: ${id_client} no existe`);
             }
-            cognito.id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.id;
-            cognito.client_id = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_clientapp_id;
-            cognito.user_pool = (_e = result.Item) === null || _e === void 0 ? void 0 : _e.aws_cognito_userpool_id;
+            cognito.id = (_g = result.Item) === null || _g === void 0 ? void 0 : _g.id;
+            cognito.client_id = (_h = result.Item) === null || _h === void 0 ? void 0 : _h.aws_cognito_clientapp_id;
+            cognito.user_pool = (_j = result.Item) === null || _j === void 0 ? void 0 : _j.aws_cognito_userpool_id;
             CognitoAuth.poolsDictionary[id_client] = cognito;
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente");
         }
@@ -101,7 +102,7 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
     catch (e) {
         if (e instanceof Error) {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.error, e, transacion_id, "Error en la busqueda de la BD");
-            throw new Error(e.message);
+            throw new AuthError(e.message);
         }
     }
 });
@@ -168,10 +169,12 @@ CognitoAuth.init = (id_client, transacion_id) => {
  * @param next Siguiente Función a procesar
  */
 CognitoAuth.verifyMiddleWare = (pem, req, res, next) => {
-    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: req.get(HEADER_AUTHORIZATION), client: req.get(HEADER_CLIENT) }, "req.id.toString()", "Función verifyMiddleWare");
-    CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION), req.get(HEADER_CLIENT), "req.id.toString()")
+    var _b, _c;
+    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: req.get(HEADER_AUTHORIZATION), client: req.get(HEADER_CLIENT) }, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), "Función verifyMiddleWare");
+    CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION), req.get(HEADER_CLIENT), (_c = req.id) === null || _c === void 0 ? void 0 : _c.toString())
         .then((decoded) => {
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: req.get(HEADER_AUTHORIZATION), client: req.get(HEADER_CLIENT) }, "req.id.toString()", "Verificación del token");
+        var _b, _c;
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: req.get(HEADER_AUTHORIZATION), client: req.get(HEADER_CLIENT) }, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), "Verificación del token");
         if (typeof decoded !== "string") {
             //Asignar al Request información del usuario autenticado
             req.user = {
@@ -188,14 +191,15 @@ CognitoAuth.verifyMiddleWare = (pem, req, res, next) => {
                 req.user.email = decoded.email;
                 req.user.username = decoded['cognito:username'];
             }
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { user: req.user }, "req.id.toString()", "Informacion del usuario");
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { user: req.user }, (_c = req.id) === null || _c === void 0 ? void 0 : _c.toString(), "Informacion del usuario");
         }
         next();
     }).catch((err) => {
+        var _b;
         if (err instanceof Error) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, "req.id.toString()", err.message);
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), err.message);
             const status = (err instanceof AuthError ? 401 : 500);
-            res.status(status).send(err.message || err);
+            res.status(status).json({ message: err.message || err });
         }
     });
 };
@@ -269,7 +273,7 @@ CognitoAuth.verify = (pems, auth, id_client, transacion_id) => {
         catch (e) {
             if (e instanceof Error) {
                 nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, e.message);
-                throw new Error(e.message);
+                return reject(new Error(e.message));
             }
         }
     });

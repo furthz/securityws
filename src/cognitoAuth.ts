@@ -57,17 +57,18 @@ export class CognitoAuth {
 
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
-            Logger.message(Level.debug, req.body, "req.id.toString()", "ingreso a la validacion")
+            Logger.message(Level.debug, req.body, req.id?.toString(), "ingreso a la validacion")
 
-            const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client, "req.id.toString()")
-            Logger.message(Level.debug, pemsDownloadProm, "req.id.toString()", "Llave publica")
+            const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client, req.id?.toString())
+            Logger.message(Level.debug, pemsDownloadProm, req.id?.toString(), "Llave publica")
 
             //verificación usando el archivo JWKS
             CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next)
         } catch (err) {
             if (err instanceof Error) {
-                Logger.message(Level.error, {}, "req.id.toString()", err.message)
-                next(err)
+                Logger.message(Level.error, {}, req.id?.toString(), err.message)
+                const status = (err instanceof AuthError ? 401 : 500)
+                res.status(status).json({message: err.message || err})
             }
         }
     }
@@ -101,7 +102,7 @@ export class CognitoAuth {
                 let result = await CognitoAuth.dynamo.get(params).promise()
 
                 if (Object.keys(result).length == 0) {
-                    throw new Error(`El cliente: ${id_client} no existe`)
+                    throw new AuthError(`El cliente: ${id_client} no existe`)
                 }
 
                 cognito.id = result.Item?.id
@@ -118,7 +119,7 @@ export class CognitoAuth {
         } catch (e) {
             if (e instanceof Error) {
                 Logger.message(Level.error, e, transacion_id, "Error en la busqueda de la BD")
-                throw new Error(e.message)
+                throw new AuthError(e.message)
             }
 
         }
@@ -192,11 +193,11 @@ export class CognitoAuth {
      * @param next Siguiente Función a procesar
      */
     private static verifyMiddleWare = (pem: { [key: string]: string }, req: IAuthenticatedRequest, res: Response, next: NextFunction) => {
-        Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, "req.id.toString()", "Función verifyMiddleWare")
+        Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, req.id?.toString(), "Función verifyMiddleWare")
 
-        CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION)!, req.get(HEADER_CLIENT)!, "req.id.toString()")
+        CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION)!, req.get(HEADER_CLIENT)!, req.id?.toString())
             .then((decoded) => {
-                Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, "req.id.toString()", "Verificación del token")
+                Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, req.id?.toString(), "Verificación del token")
                 if (typeof decoded !== "string") {
                     //Asignar al Request información del usuario autenticado
                     req.user = {
@@ -215,15 +216,15 @@ export class CognitoAuth {
                         req.user!.email = decoded.email
                         req.user!.username = decoded['cognito:username']
                     }
-                    Logger.message(Level.info, { user: req.user! }, "req.id.toString()", "Informacion del usuario")
+                    Logger.message(Level.info, { user: req.user! }, req.id?.toString(), "Informacion del usuario")
                 }
                 next()
 
             }).catch((err) => {
                 if (err instanceof Error) {
-                    Logger.message(Level.error, {}, "req.id.toString()", err.message)
+                    Logger.message(Level.error, {}, req.id?.toString(), err.message)
                     const status = (err instanceof AuthError ? 401 : 500)
-                    res.status(status).send(err.message || err)
+                    res.status(status).json({message: err.message || err})
                 }
 
             })
@@ -312,7 +313,7 @@ export class CognitoAuth {
             } catch (e) {
                 if (e instanceof Error) {
                     Logger.message(Level.error, {}, transacion_id, e.message)
-                    throw new Error (e.message)
+                    return reject(new Error(e.message))
                 }
             }
 
