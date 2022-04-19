@@ -141,6 +141,8 @@ CognitoAuth.init = (id_client, transacion_id) => {
                     nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada");
                     resolve(pems);
                 });
+            }).catch((error) => {
+                reject(error);
             });
         }
         else { //leer la firma publica

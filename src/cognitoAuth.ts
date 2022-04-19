@@ -165,6 +165,8 @@ export class CognitoAuth {
                             Logger.message(Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada")
                             resolve(pems)
                         })
+                    }).catch((error) => {
+                        reject(error)
                     })
 
             } else { //leer la firma publica
