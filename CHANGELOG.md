@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.33](https://github.com/furthz/securityws/compare/v1.0.32...v1.0.33) (2022-04-19)
+
+
+### Bug Fixes
+
+* Correccion tipo de error ([a5f425e](https://github.com/furthz/securityws/commit/a5f425e9719023d1c7ef4031620aa0ada9ce7f42))
+
 ### [1.0.32](https://github.com/furthz/securityws/compare/v1.0.31...v1.0.32) (2022-04-19)
 
 
