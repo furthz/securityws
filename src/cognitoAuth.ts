@@ -53,20 +53,20 @@ export class CognitoAuth {
      */
     public static process: Handler = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            Logger.message(Level.info, { action: "validacion", id: req.id }, req.id.toString(), "validacion del header")
+            Logger.message(Level.info, { action: "validacion", id: req.id }, "req.id.toString()", "validacion del header")
 
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'
-            Logger.message(Level.debug, req.body, req.id.toString(), "ingreso a la validacion")
+            Logger.message(Level.debug, req.body, "req.id.toString()", "ingreso a la validacion")
 
-            const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client, req.id.toString())
+            const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client, "req.id.toString()")
             Logger.message(Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica")
 
             //verificación usando el archivo JWKS
             CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next)
         } catch (err) {
             if (err instanceof Error) {
-                Logger.message(Level.error, {}, req.id.toString(), err.message)
+                Logger.message(Level.error, {}, "req.id.toString()", err.message)
             }
         }
     }
@@ -178,11 +178,11 @@ export class CognitoAuth {
      * @param next Siguiente Función a procesar
      */
     private static verifyMiddleWare = (pem: { [key: string]: string }, req: IAuthenticatedRequest, res: Response, next: NextFunction) => {
-        Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, req.id.toString(), "Función verifyMiddleWare")
+        Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, "req.id.toString()", "Función verifyMiddleWare")
 
-        CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION)!, req.get(HEADER_CLIENT)!, req.id.toString())
+        CognitoAuth.verify(pem, req.get(HEADER_AUTHORIZATION)!, req.get(HEADER_CLIENT)!, "req.id.toString()")
             .then((decoded) => {
-                Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, req.id.toString(), "Verificación del token")
+                Logger.message(Level.debug, { Auth: req.get(HEADER_AUTHORIZATION)!, client: req.get(HEADER_CLIENT)! }, "req.id.toString()", "Verificación del token")
                 if (typeof decoded !== "string") {
                     //Asignar al Request información del usuario autenticado
                     req.user = {
@@ -201,13 +201,13 @@ export class CognitoAuth {
                         req.user!.email = decoded.email
                         req.user!.username = decoded['cognito:username']
                     }
-                    Logger.message(Level.info, { user: req.user! }, req.id.toString(), "Informacion del usuario")
+                    Logger.message(Level.info, { user: req.user! }, "req.id.toString()", "Informacion del usuario")
                 }
                 next()
 
             }).catch((err) => {
                 if (err instanceof Error) {
-                    Logger.message(Level.error, {}, req.id.toString(), err.message)
+                    Logger.message(Level.error, {}, "req.id.toString()", err.message)
                     const status = (err instanceof AuthError ? 401 : 500)
                     res.status(status).send(err.message || err)
                 }
