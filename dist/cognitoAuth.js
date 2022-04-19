@@ -56,7 +56,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     catch (err) {
         if (err instanceof Error) {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, "req.id.toString()", err.message);
-            next(err);
+            //next(err)
         }
     }
 });
@@ -92,6 +92,9 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
             cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, result, transacion_id, "resultado en la tabla cliente");
             CognitoAuth.poolsDictionary[id_client] = cognito;
+        }
+        else {
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados");
         }
     }
     catch (e) {

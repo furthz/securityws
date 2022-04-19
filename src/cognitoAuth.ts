@@ -67,7 +67,7 @@ export class CognitoAuth {
         } catch (err) {
             if (err instanceof Error) {
                 Logger.message(Level.error, {}, "req.id.toString()", err.message)
-                next(err)
+                //next(err)
             }
         }
     }
@@ -110,6 +110,8 @@ export class CognitoAuth {
                 Logger.message(Level.debug, result, transacion_id, "resultado en la tabla cliente")
 
                 CognitoAuth.poolsDictionary[id_client] = cognito
+            }else{
+                Logger.message(Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados")
             }
 
         } catch (e) {
