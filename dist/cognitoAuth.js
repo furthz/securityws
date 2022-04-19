@@ -49,7 +49,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
         nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, "req.id.toString()", "ingreso a la validacion");
         const pemsDownloadProm = yield CognitoAuth.init(id_client, "req.id.toString()");
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica");
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, "req.id.toString()", "Llave publica");
         //verificación usando el archivo JWKS
         CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next);
     }

@@ -60,7 +60,7 @@ export class CognitoAuth {
             Logger.message(Level.debug, req.body, "req.id.toString()", "ingreso a la validacion")
 
             const pemsDownloadProm: { [key: string]: string } = await CognitoAuth.init(id_client, "req.id.toString()")
-            Logger.message(Level.debug, pemsDownloadProm, req.body.id.toString(), "Llave publica")
+            Logger.message(Level.debug, pemsDownloadProm, "req.id.toString()", "Llave publica")
 
             //verificación usando el archivo JWKS
             CognitoAuth.verifyMiddleWare(pemsDownloadProm, req, res, next)
