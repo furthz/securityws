@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.31](https://github.com/furthz/securityws/compare/v1.0.30...v1.0.31) (2022-04-19)
+
+
+### Bug Fixes
+
+* Agregar Id del request al log ([7a152f1](https://github.com/furthz/securityws/commit/7a152f118daf673d96ca30f4ffcb0d3eee2fee3f))
+
 ### [1.0.30](https://github.com/furthz/securityws/compare/v1.0.29...v1.0.30) (2022-04-19)
 
 
