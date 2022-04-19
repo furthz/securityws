@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.13](https://github.com/furthz/securityws/compare/v1.0.12...v1.0.13) (2022-04-19)
+
+
+### Bug Fixes
+
+* Correccion busqueda pool ([a83e0d5](https://github.com/furthz/securityws/commit/a83e0d57a489e5c9091c7a98ed8a35ec48e9b146))
+
 ### [1.0.12](https://github.com/furthz/securityws/compare/v1.0.11...v1.0.12) (2022-04-19)
 
 
