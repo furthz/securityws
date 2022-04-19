@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.34](https://github.com/furthz/securityws/compare/v1.0.33...v1.0.34) (2022-04-19)
+
+
+### Bug Fixes
+
+* Validacion de los headers necesarios ([76249ff](https://github.com/furthz/securityws/commit/76249ffba0a8ab9eb46c101f0d7d62745c6e4deb))
+
 ### [1.0.33](https://github.com/furthz/securityws/compare/v1.0.32...v1.0.33) (2022-04-19)
 
 
