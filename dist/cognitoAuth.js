@@ -142,7 +142,7 @@ CognitoAuth.init = (id_client, transacion_id) => {
                     resolve(pems);
                 });
             }).catch((error) => {
-                reject(error);
+                reject(new Error(error));
             });
         }
         else { //leer la firma publica
