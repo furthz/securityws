@@ -80,7 +80,7 @@ export class CognitoAuth  {
 
         try {
             //validar si ya existe en el dictionario
-            if (CognitoAuth.poolsDictionary[id_client]) {
+            if (!CognitoAuth.poolsDictionary[id_client]) {
                 let result = await CognitoAuth.dynamo.get(params).promise()
                 cognito.id = result.Item?.id
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id

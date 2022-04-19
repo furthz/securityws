@@ -67,7 +67,7 @@ CognitoAuth.getDataClient = (id_client) => __awaiter(void 0, void 0, void 0, fun
     };
     try {
         //validar si ya existe en el dictionario
-        if (CognitoAuth.poolsDictionary[id_client]) {
+        if (!CognitoAuth.poolsDictionary[id_client]) {
             let result = yield CognitoAuth.dynamo.get(params).promise();
             cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
             cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
