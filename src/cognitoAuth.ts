@@ -173,7 +173,11 @@ export class CognitoAuth {
                     }).catch((error) => {
                         if (error instanceof Error) {
                             Logger.message(Level.error, {}, transacion_id, "GetCliente")
-                            return reject(new Error(error.message))
+                            if (error instanceof AuthError){
+                                return reject(new AuthError(error.message))
+                            }else{
+                                return reject(new Error(error.message))
+                            }
                         }
                     })
 

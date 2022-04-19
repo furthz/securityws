@@ -150,7 +150,12 @@ CognitoAuth.init = (id_client, transacion_id) => {
             }).catch((error) => {
                 if (error instanceof Error) {
                     nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "GetCliente");
-                    return reject(new Error(error.message));
+                    if (error instanceof AuthError) {
+                        return reject(new AuthError(error.message));
+                    }
+                    else {
+                        return reject(new Error(error.message));
+                    }
                 }
             });
         }
