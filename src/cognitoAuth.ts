@@ -53,7 +53,7 @@ export class CognitoAuth {
      */
     public static process: Handler = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            Logger.message(Level.info, { action: "validacion", id: req.id }, "req.id.toString()", "validacion del header")
+            Logger.message(Level.info, { action: "validacion", id: req.id }, req.id?.toString(), "validacion del header")
 
             //obtener el valor del header client_nexux
             let id_client = req.get(HEADER_CLIENT) || 'soapros'

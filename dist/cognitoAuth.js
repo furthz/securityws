@@ -43,8 +43,9 @@ CognitoAuth.poolsDictionary = {};
  * @param next Siguiente función a procesar de pasar la validación
  */
 CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
     try {
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { action: "validacion", id: req.id }, "req.id.toString()", "validacion del header");
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { action: "validacion", id: req.id }, (_b = req.id) === null || _b === void 0 ? void 0 : _b.toString(), "validacion del header");
         //obtener el valor del header client_nexux
         let id_client = req.get(HEADER_CLIENT) || 'soapros';
         nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, req.body, "req.id.toString()", "ingreso a la validacion");
@@ -66,7 +67,7 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
  * @param transacion_id Id de la transacción
  */
 CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d;
+    var _c, _d, _e;
     try {
         let params = {
             TableName: TABLE_CLIENT,
@@ -87,9 +88,9 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
             if (Object.keys(result).length == 0) {
                 throw new Error(`El cliente: ${id_client} no existe`);
             }
-            cognito.id = (_b = result.Item) === null || _b === void 0 ? void 0 : _b.id;
-            cognito.client_id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.aws_cognito_clientapp_id;
-            cognito.user_pool = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_userpool_id;
+            cognito.id = (_c = result.Item) === null || _c === void 0 ? void 0 : _c.id;
+            cognito.client_id = (_d = result.Item) === null || _d === void 0 ? void 0 : _d.aws_cognito_clientapp_id;
+            cognito.user_pool = (_e = result.Item) === null || _e === void 0 ? void 0 : _e.aws_cognito_userpool_id;
             CognitoAuth.poolsDictionary[id_client] = cognito;
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente");
         }
