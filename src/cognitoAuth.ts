@@ -98,13 +98,17 @@ export class CognitoAuth {
             if (!CognitoAuth.poolsDictionary[id_client]) {
                 let result = await CognitoAuth.dynamo.get(params).promise()
 
-                if (!result) {
-                    throw new Error(`El cliente: ${id_client} no existe`)
-                }
+                // if (!result) {
+                //     throw new Error(`El cliente: ${id_client} no existe`)
+                // }
 
                 cognito.id = result.Item?.id
                 cognito.client_id = result.Item?.aws_cognito_clientapp_id
                 cognito.user_pool = result.Item?.aws_cognito_userpool_id
+
+                if(cognito.id === "0") {
+                    throw new Error(`El cliente: ${id_client} no existe`)
+                }
 
                 Logger.message(Level.debug, result, transacion_id, "resultado en la tabla cliente")
 
