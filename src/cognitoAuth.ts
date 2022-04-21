@@ -142,7 +142,7 @@ export class CognitoAuth {
             Logger.message(Level.debug, { id_client }, transacion_id, "Descarga de la firma publica")
             let existSign = fs.existsSync(`/usr/${id_client}.pem`)
 
-            if (!existSign) {
+            if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
                 Logger.message(Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica")
 
                 //cargar la data del tabla cliente
