@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.35](https://github.com/furthz/securityws/compare/v1.0.34...v1.0.35) (2022-04-21)
+
+
+### Bug Fixes
+
+* Correccion bug para obtener la data del pool ([3db0b7f](https://github.com/furthz/securityws/commit/3db0b7fb436436efabebfeed0f3b91100bdc8858))
+* Correccion bug para obtener la data del pool ([062c2ce](https://github.com/furthz/securityws/commit/062c2ce341c4597f8c3562f1e277819ec4a58f5b))
+
 ### [1.0.34](https://github.com/furthz/securityws/compare/v1.0.33...v1.0.34) (2022-04-19)
 
 
