@@ -122,7 +122,7 @@ CognitoAuth.init = (id_client, transacion_id) => {
     return new Promise((resolve, reject) => {
         nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Descarga de la firma publica");
         let existSign = fs_1.default.existsSync(`/usr/${id_client}.pem`);
-        if (!existSign) {
+        if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica");
             //cargar la data del tabla cliente
             CognitoAuth.getDataClient(id_client, transacion_id)
