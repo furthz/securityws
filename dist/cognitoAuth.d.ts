@@ -1,10 +1,16 @@
-import { Handler } from 'express';
+import * as Hapi from '@hapi/hapi';
+import { Request, Handler } from 'express';
+export declare type HapiCustomAuthError = {
+    code: number;
+    message: string;
+};
 /**
  * Clase para realizar la validación de seguridad de acceso a partir de un JWT
  */
 export declare class CognitoAuth {
     private static dynamo;
     private static poolsDictionary;
+    static processHapi: (request: Hapi.Request, h: Hapi.ResponseToolkit) => Promise<HapiCustomAuthError | null>;
     /**
      * Método principal para realizar la validación de los headers: Authorization y client_nexux
      * @param req Request
@@ -25,6 +31,7 @@ export declare class CognitoAuth {
      * @returns
      */
     private static init;
+    private static hapiVerifyToken;
     /**
      * Validar el token y añadir la información del usuario en el request si la validación es exitosa
      * @param pem Llave publica

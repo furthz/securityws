@@ -17,6 +17,7 @@ exports.CognitoAuth = void 0;
 const aws_sdk_1 = require("aws-sdk");
 const fs_1 = __importDefault(require("fs"));
 const request_1 = __importDefault(require("request"));
+const uuid_1 = require("uuid");
 const jwk_to_pem_1 = __importDefault(require("jwk-to-pem"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const nexuxlog_1 = require("nexuxlog");
@@ -39,6 +40,33 @@ exports.CognitoAuth = CognitoAuth;
 _a = CognitoAuth;
 CognitoAuth.dynamo = new aws_sdk_1.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION });
 CognitoAuth.poolsDictionary = {};
+CognitoAuth.processHapi = (request, h) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = (0, uuid_1.v4)();
+    let result = null;
+    try {
+        if (!request.headers[HEADER_AUTHORIZATION] || !request.headers[HEADER_CLIENT]) {
+            throw new AuthError("Es necesario los Headers de Authorization y client_nexux");
+        }
+        //obtener el valor del header client_nexux
+        let id_client = request.headers[HEADER_CLIENT] || 'soapros';
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, request.raw, id, "ingreso a la validacion");
+        const pemsDownloadProm = yield CognitoAuth.init(id_client, id);
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, pemsDownloadProm, id, "Llave publica");
+        //verificación usando el archivo JWKS
+        const app = request.app;
+        app.id = id;
+        request.app = app;
+        yield CognitoAuth.hapiVerifyToken(pemsDownloadProm, request, h);
+    }
+    catch (err) {
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, id, err.message);
+        result = { code: 500, message: err.message };
+        if (err instanceof AuthError) {
+            result.code = 401;
+        }
+    }
+    return result;
+});
 /**
  * Método principal para realizar la validación de los headers: Authorization y client_nexux
  * @param req Request
@@ -172,6 +200,35 @@ CognitoAuth.init = (id_client, transacion_id) => {
         }
     });
 };
+CognitoAuth.hapiVerifyToken = (pem, request, h) => __awaiter(void 0, void 0, void 0, function* () {
+    const headerAuth = request.headers[HEADER_AUTHORIZATION];
+    const headerClient = request.headers[HEADER_CLIENT];
+    const app = request.app;
+    const id = app.id;
+    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: headerAuth, client: headerClient }, id, "Función verifyMiddleWare");
+    const decoded = yield CognitoAuth.verify(pem, headerAuth, headerClient, id);
+    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { Auth: headerAuth, client: headerClient }, id, "Verificación del token");
+    if (typeof decoded !== "string") {
+        //Asignar al Request información del usuario autenticado
+        const app = request.app;
+        app.user = {
+            sub: decoded.sub,
+            token_use: decoded.token_use
+        };
+        if (decoded.token_use === TOKEN_USE_ACCESS) {
+            // access token specific fields
+            app.user.scope = decoded.scope.split(' ');
+            app.user.username = decoded.username;
+        }
+        if (decoded.token_use === TOKEN_USE_ID) {
+            // id token specific fields
+            app.user.email = decoded.email;
+            app.user.username = decoded['cognito:username'];
+        }
+        request.app = app;
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.info, { user: app.user }, id, "Informacion del usuario");
+    }
+});
 /**
  * Validar el token y añadir la información del usuario en el request si la validación es exitosa
  * @param pem Llave publica
