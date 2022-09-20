@@ -32,9 +32,26 @@ if (process.env.STAGE === 'test') {
 }
 let stage = process.env.STAGE || '';
 process.env.STAGE = (stage.toLowerCase() === 'test' ? 'qa' : stage).toLowerCase();
-const TABLE_CLIENT = process.env.TABLE_CLIENT || 'capacniam-cliente-' + process.env.STAGE;
+const GLOBAL_STAGE = process.env.STAGE;
+const TABLE_CLIENT = process.env.TABLE_CLIENT || 'capacniam-cliente-' + GLOBAL_STAGE;
 const REGION = process.env.REGION;
 class AuthError extends Error {
+}
+function getClientesTemporal() {
+    const map = new Map();
+    if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'qa' || GLOBAL_STAGE === 'prd') {
+        map.set('tdp', {
+            id: 'tdp',
+            aws_cognito_clientapp_id: '4kpq25sb27tutk54v0j7if0jpf',
+            aws_cognito_userpool_id: 'us-east-1_5LjA8Pbem'
+        });
+        map.set('bn_ripley', {
+            id: 'bn_ripley',
+            aws_cognito_clientapp_id: '434gcllmokbpmj9qkhl37geh8v',
+            aws_cognito_userpool_id: 'us-east-1_KpauCTxDx'
+        });
+    }
+    return map;
 }
 /**
  * Clase para realizar la validación de seguridad de acceso a partir de un JWT
@@ -45,6 +62,9 @@ exports.CognitoAuth = CognitoAuth;
 _a = CognitoAuth;
 CognitoAuth.dynamo = new aws_sdk_1.DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION });
 CognitoAuth.poolsDictionary = {};
+// POR AHORA, VOY A ESCRIBIR LOS CLIENTES EN DURO, HASTA QUE EXISTA UN SERVICIO CAPAZ DE RESPONDER
+// CON LA INFO DE CLIENTES DESDE WEAVER 3 O ALGO ASI
+CognitoAuth.clientes = getClientesTemporal();
 CognitoAuth.processHapi = (request, h) => __awaiter(void 0, void 0, void 0, function* () {
     const id = (0, uuid_1.v4)();
     let result = null;
@@ -112,16 +132,15 @@ CognitoAuth.process = (req, res, next) => __awaiter(void 0, void 0, void 0, func
  * @param transacion_id Id de la transacción
  */
 CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void 0, void 0, function* () {
-    var _g, _h, _j;
     try {
-        let params = {
-            TableName: TABLE_CLIENT,
-            Key: {
-                id: id_client
-            },
-            ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
-        };
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente");
+        // let params: DynamoDB.DocumentClient.GetItemInput = {
+        //   TableName: TABLE_CLIENT!,
+        //   Key: {
+        //     id: id_client
+        //   },
+        //   ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
+        // }
+        // Logger.message(Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente")
         let cognito = {
             id: "0",
             client_id: "0",
@@ -129,15 +148,19 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
         };
         //validar si ya existe en el dictionario
         if (!CognitoAuth.poolsDictionary[id_client]) {
-            let result = yield CognitoAuth.dynamo.get(params).promise();
-            if (Object.keys(result).length == 0) {
+            console.log('Buscando cliente en pool');
+            const oCliente = CognitoAuth.clientes.get(id_client);
+            if (!oCliente) {
                 throw new AuthError(`El cliente: ${id_client} no existe`);
             }
-            cognito.id = (_g = result.Item) === null || _g === void 0 ? void 0 : _g.id;
-            cognito.client_id = (_h = result.Item) === null || _h === void 0 ? void 0 : _h.aws_cognito_clientapp_id;
-            cognito.user_pool = (_j = result.Item) === null || _j === void 0 ? void 0 : _j.aws_cognito_userpool_id;
+            // let result = await CognitoAuth.dynamo.get(params).promise()
+            // if (Object.keys(result).length == 0) {
+            // }
+            cognito.id = oCliente.id;
+            cognito.client_id = oCliente.aws_cognito_clientapp_id;
+            cognito.user_pool = oCliente.aws_cognito_userpool_id;
             CognitoAuth.poolsDictionary[id_client] = cognito;
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente");
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { oCliente, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente");
         }
         else {
             nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados");
@@ -150,66 +173,88 @@ CognitoAuth.getDataClient = (id_client, transacion_id) => __awaiter(void 0, void
         }
     }
 });
+CognitoAuth.requestGetAsync = (options) => __awaiter(void 0, void 0, void 0, function* () {
+    return new Promise(function (resolve, reject) {
+        request_1.default.get(options, (err, resp, body) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve({ response: resp, body: body });
+        });
+    });
+});
 /**
  * Método que inicializa la descarga de la Firma pública para el cliente solicitado
  * @param id_client Id del cliente
  * @param transacion_id Id de la transaccion
  * @returns
  */
-CognitoAuth.init = (id_client, transacion_id) => {
-    return new Promise((resolve, reject) => {
-        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Descarga de la firma publica");
-        let existSign = fs_1.default.existsSync(`/usr/${id_client}.pem`);
-        if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica");
-            //cargar la data del tabla cliente
-            CognitoAuth.getDataClient(id_client, transacion_id)
-                .then((result) => {
-                nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result }, transacion_id, "se obtuvo la información del id_client");
-                //ruta de donde bajar la firma publica
-                let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
-                const options = {
-                    url: `${ISSUER}/.well-known/jwks.json`,
-                    json: true
-                };
-                nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { options }, transacion_id, "Link de descarga");
-                //descargar la firma publica JWKS
-                request_1.default.get(options, (err, resp, body) => {
-                    if (err) {
-                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, err);
-                        return reject(new Error("No se pudo descargar el JWKS"));
-                    }
-                    if (!body || !body.keys) {
-                        nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "Formato de JWSK");
-                        return reject(new Error("Formato de JWSK no es el adecuado"));
-                    }
-                    const pems = {};
-                    for (let key of body.keys) {
-                        pems[key.kid] = (0, jwk_to_pem_1.default)(key);
-                    }
-                    fs_1.default.writeFileSync(`/usr/${id_client}.pem`, JSON.stringify(pems));
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada");
-                    resolve(pems);
-                });
-            }).catch((error) => {
-                if (error instanceof Error) {
-                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "GetCliente");
-                    if (error instanceof AuthError) {
-                        return reject(new AuthError(error.message));
-                    }
-                    else {
-                        return reject(new Error(error.message));
-                    }
+CognitoAuth.init = (id_client, transacion_id) => __awaiter(void 0, void 0, void 0, function* () {
+    // return new Promise<{ [key: string]: string }>((resolve, reject) => {
+    nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Descarga de la firma publica");
+    let existSign = fs_1.default.existsSync(`/usr/${id_client}.pem`);
+    // Debe funcionar de la misma forma, intentando cargar en memoria los clientes en un key value
+    let output = {};
+    if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica");
+        //cargar la data del tabla cliente
+        try {
+            const result = yield CognitoAuth.getDataClient(id_client, transacion_id);
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { result }, transacion_id, "se obtuvo la información del id_client");
+            //ruta de donde bajar la firma publica
+            let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`;
+            const options = {
+                url: `${ISSUER}/.well-known/jwks.json`,
+                json: true
+            };
+            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { options }, transacion_id, "Link de descarga");
+            //descargar la firma publica JWKS
+            try {
+                const { body } = yield CognitoAuth.requestGetAsync(options); //, (err, resp, body) => {
+                if (!body || !body.keys) {
+                    nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "Formato de JWSK");
+                    throw new Error("Formato de JWSK no es el adecuado");
                 }
-            });
+                const pems = {};
+                for (let key of body.keys) {
+                    pems[key.kid] = (0, jwk_to_pem_1.default)(key);
+                }
+                yield fs_1.default.promises.writeFile(`/usr/${id_client}.pem`, JSON.stringify(pems));
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada");
+                // resolve(pems)
+                output = pems;
+            }
+            catch (err) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, err);
+                throw new Error("No se pudo descargar el JWKS");
+            }
+            // if (err) {
+            //   Logger.message(Level.error, {}, transacion_id, err)
+            //   return reject(new Error("No se pudo descargar el JWKS"))
+            // }
+            //})
         }
-        else { //leer la firma publica
-            nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica leída");
-            let sign = JSON.parse(fs_1.default.readFileSync(`/usr/${id_client}.pem`, "utf-8"));
-            resolve(sign);
+        catch (error) {
+            if (error instanceof Error) {
+                nexuxlog_1.Logger.message(nexuxlog_1.Level.error, {}, transacion_id, "GetCliente");
+                if (error instanceof AuthError) {
+                    throw new AuthError(error.message);
+                }
+                else {
+                    throw new Error(error.message);
+                }
+            }
         }
-    });
-};
+    }
+    else { //leer la firma publica
+        nexuxlog_1.Logger.message(nexuxlog_1.Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica leída");
+        let sign = JSON.parse(yield fs_1.default.promises.readFile(`/usr/${id_client}.pem`, "utf-8"));
+        output = sign;
+        // resolve(sign)
+    }
+    // })
+    return output;
+});
 CognitoAuth.hapiVerifyToken = (pem, request, h) => __awaiter(void 0, void 0, void 0, function* () {
     const headerAuth = request.headers[HEADER_AUTHORIZATION];
     const headerClient = request.headers[HEADER_CLIENT];

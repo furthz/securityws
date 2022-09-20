@@ -171,7 +171,7 @@ export class CognitoAuth {
 
       //validar si ya existe en el dictionario
       if (!CognitoAuth.poolsDictionary[id_client]) {
-
+        console.log('Buscando cliente en pool')
         const oCliente = CognitoAuth.clientes.get(id_client)
         if (!oCliente) {
           throw new AuthError(`El cliente: ${id_client} no existe`)

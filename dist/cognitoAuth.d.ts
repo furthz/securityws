@@ -10,6 +10,7 @@ export declare type HapiCustomAuthError = {
 export declare class CognitoAuth {
     private static dynamo;
     private static poolsDictionary;
+    private static clientes;
     static processHapi: (request: Hapi.Request, h: Hapi.ResponseToolkit) => Promise<HapiCustomAuthError | null>;
     /**
      * Método principal para realizar la validación de los headers: Authorization y client_nexux
@@ -24,6 +25,7 @@ export declare class CognitoAuth {
      * @param transacion_id Id de la transacción
      */
     private static getDataClient;
+    private static requestGetAsync;
     /**
      * Método que inicializa la descarga de la Firma pública para el cliente solicitado
      * @param id_client Id del cliente
