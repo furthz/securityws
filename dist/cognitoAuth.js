@@ -43,11 +43,14 @@ CognitoAuth.poolsDictionary = {};
 CognitoAuth.processHapi = (request, h) => __awaiter(void 0, void 0, void 0, function* () {
     const id = (0, uuid_1.v4)();
     let result = null;
-    request.headers[HEADER_AUTHORIZATION] = request.headers['Authorization'] || request.headers['authorization'];
+    request.headers[HEADER_AUTHORIZATION] = request.headers[HEADER_AUTHORIZATION] || request.headers['authorization'];
     // const authorizationHeader = request.headers['Authorization'] || request.headers['authorization']
     try {
-        if (!request.headers[HEADER_AUTHORIZATION] || !request.headers[HEADER_CLIENT]) {
-            throw new AuthError("Es necesario los Headers de Authorization y client_nexux");
+        if (!request.headers[HEADER_AUTHORIZATION]) {
+            throw new AuthError("Es necesario el Header de 'Authorization'");
+        }
+        if (!request.headers[HEADER_CLIENT]) {
+            throw new AuthError("Es necesario el Header de 'client_nexux'");
         }
         //obtener el valor del header client_nexux
         let id_client = request.headers[HEADER_CLIENT] || 'soapros';
