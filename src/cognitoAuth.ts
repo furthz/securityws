@@ -23,8 +23,9 @@ if (process.env.STAGE === 'test') {
 }
 let stage = process.env.STAGE || ''
 process.env.STAGE = (stage.toLowerCase() === 'test' ? 'qa' : stage).toLowerCase()
+const GLOBAL_STAGE = process.env.STAGE
 
-const TABLE_CLIENT = process.env.TABLE_CLIENT || 'capacniam-cliente-' + process.env.STAGE
+const TABLE_CLIENT = process.env.TABLE_CLIENT || 'capacniam-cliente-' + GLOBAL_STAGE
 
 const REGION = process.env.REGION
 
@@ -53,6 +54,22 @@ export type HapiCustomAuthError = {
   message: string
 }
 
+function getClientesTemporal() {
+  const map = new Map<string, any>()
+  if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'qa' || GLOBAL_STAGE === 'prd') {
+    map.set('tdp', {
+      id: 'tdp',
+      aws_cognito_clientapp_id: '4kpq25sb27tutk54v0j7if0jpf',
+      aws_cognito_userpool_id: 'us-east-1_5LjA8Pbem'
+    })
+    map.set('bn_ripley', {
+      id: 'bn_ripley',
+      aws_cognito_clientapp_id: '434gcllmokbpmj9qkhl37geh8v',
+      aws_cognito_userpool_id: 'us-east-1_KpauCTxDx'
+    })
+  }
+  return map
+}
 /**
  * Clase para realizar la validación de seguridad de acceso a partir de un JWT
  */
@@ -61,6 +78,9 @@ export class CognitoAuth {
   private static dynamo: DocumentClient = new DynamoDB.DocumentClient({ apiVersion: '2012-08-10', region: REGION })
   private static poolsDictionary: { [key: string]: ICognito } = {}
 
+  // POR AHORA, VOY A ESCRIBIR LOS CLIENTES EN DURO, HASTA QUE EXISTA UN SERVICIO CAPAZ DE RESPONDER
+  // CON LA INFO DE CLIENTES DESDE WEAVER 3 O ALGO ASI
+  private static clientes = getClientesTemporal()
   public static processHapi = async (request: Hapi.Request, h: Hapi.ResponseToolkit): Promise<HapiCustomAuthError | null> => {
     const id = v4()
     let result = null
@@ -69,7 +89,7 @@ export class CognitoAuth {
 
     // const authorizationHeader = request.headers['Authorization'] || request.headers['authorization']
     try {
-      if (!request.headers[HEADER_AUTHORIZATION]){
+      if (!request.headers[HEADER_AUTHORIZATION]) {
         throw new AuthError("Es necesario el Header de 'Authorization'")
       }
       if (!request.headers[HEADER_CLIENT]) {
@@ -134,15 +154,14 @@ export class CognitoAuth {
   private static getDataClient = async (id_client: string, transacion_id: string) => {
 
     try {
-
-      let params: DynamoDB.DocumentClient.GetItemInput = {
-        TableName: TABLE_CLIENT!,
-        Key: {
-          id: id_client
-        },
-        ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
-      }
-      Logger.message(Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente")
+      // let params: DynamoDB.DocumentClient.GetItemInput = {
+      //   TableName: TABLE_CLIENT!,
+      //   Key: {
+      //     id: id_client
+      //   },
+      //   ProjectionExpression: "id, aws_cognito_clientapp_id, aws_cognito_userpool_id"
+      // }
+      // Logger.message(Level.debug, params, transacion_id, "parametros de busqueda en la tabla cliente")
 
       let cognito: ICognito = {
         id: "0",
@@ -152,18 +171,21 @@ export class CognitoAuth {
 
       //validar si ya existe en el dictionario
       if (!CognitoAuth.poolsDictionary[id_client]) {
-        let result = await CognitoAuth.dynamo.get(params).promise()
 
-        if (Object.keys(result).length == 0) {
+        const oCliente = CognitoAuth.clientes.get(id_client)
+        if (!oCliente) {
           throw new AuthError(`El cliente: ${id_client} no existe`)
         }
+        // let result = await CognitoAuth.dynamo.get(params).promise()
+        // if (Object.keys(result).length == 0) {
+        // }
 
-        cognito.id = result.Item?.id
-        cognito.client_id = result.Item?.aws_cognito_clientapp_id
-        cognito.user_pool = result.Item?.aws_cognito_userpool_id
+        cognito.id = oCliente.id
+        cognito.client_id = oCliente.aws_cognito_clientapp_id
+        cognito.user_pool = oCliente.aws_cognito_userpool_id
 
         CognitoAuth.poolsDictionary[id_client] = cognito
-        Logger.message(Level.debug, { result, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente")
+        Logger.message(Level.debug, { oCliente, pool: CognitoAuth.poolsDictionary }, transacion_id, "resultado en la tabla cliente")
 
       } else {
         Logger.message(Level.debug, CognitoAuth.poolsDictionary, transacion_id, "Datos Cargados")
@@ -177,69 +199,95 @@ export class CognitoAuth {
 
     }
   }
-
+  private static requestGetAsync = async (options: {
+    url: string,
+    json: boolean
+  }): Promise<{ response: request.Response, body: any }> => {
+    return new Promise(function(resolve, reject) {
+      request.get(options, (err, resp, body) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve({ response: resp, body: body })
+      })
+    })
+  }
   /**
    * Método que inicializa la descarga de la Firma pública para el cliente solicitado
    * @param id_client Id del cliente
    * @param transacion_id Id de la transaccion
    * @returns
    */
-  private static init = (id_client: string, transacion_id: string) => {
-    return new Promise<{ [key: string]: string }>((resolve, reject) => {
-      Logger.message(Level.debug, { id_client }, transacion_id, "Descarga de la firma publica")
-      let existSign = fs.existsSync(`/usr/${id_client}.pem`)
+  private static init = async (id_client: string, transacion_id: string) => {
+    // return new Promise<{ [key: string]: string }>((resolve, reject) => {
+    Logger.message(Level.debug, { id_client }, transacion_id, "Descarga de la firma publica")
+    let existSign = fs.existsSync(`/usr/${id_client}.pem`)
 
-      if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
-        Logger.message(Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica")
+    // Debe funcionar de la misma forma, intentando cargar en memoria los clientes en un key value
+    let output = {} as { [key: string]: string }
+    if (!existSign || !CognitoAuth.poolsDictionary[id_client]) {
+      Logger.message(Level.debug, { id_client }, transacion_id, "Primera descarga de la firma publica")
 
-        //cargar la data del tabla cliente
-        CognitoAuth.getDataClient(id_client, transacion_id)
-          .then((result) => {
-            Logger.message(Level.debug, { result }, transacion_id, "se obtuvo la información del id_client")
+      //cargar la data del tabla cliente
+      try {
+        const result = await CognitoAuth.getDataClient(id_client, transacion_id)
+        Logger.message(Level.debug, { result }, transacion_id, "se obtuvo la información del id_client")
 
-            //ruta de donde bajar la firma publica
-            let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`
-            const options = {
-              url: `${ISSUER}/.well-known/jwks.json`,
-              json: true
-            }
-            Logger.message(Level.debug, { options }, transacion_id, "Link de descarga")
+        //ruta de donde bajar la firma publica
+        let ISSUER = `https://cognito-idp.${REGION}.amazonaws.com/${CognitoAuth.poolsDictionary[id_client].user_pool}`
+        const options = {
+          url: `${ISSUER}/.well-known/jwks.json`,
+          json: true
+        }
+        Logger.message(Level.debug, { options }, transacion_id, "Link de descarga")
 
-            //descargar la firma publica JWKS
-            request.get(options, (err, resp, body) => {
-              if (err) {
-                Logger.message(Level.error, {}, transacion_id, err)
-                return reject(new Error("No se pudo descargar el JWKS"))
-              }
-              if (!body || !body.keys) {
-                Logger.message(Level.error, {}, transacion_id, "Formato de JWSK")
-                return reject(new Error("Formato de JWSK no es el adecuado"))
-              }
-              const pems: { [key: string]: string } = {}
-              for (let key of body.keys) {
-                pems[key.kid] = jwkToPem(key)
-              }
-              fs.writeFileSync(`/usr/${id_client}.pem`, JSON.stringify(pems))
-              Logger.message(Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada")
-              resolve(pems)
-            })
-          }).catch((error) => {
-            if (error instanceof Error) {
-              Logger.message(Level.error, {}, transacion_id, "GetCliente")
-              if (error instanceof AuthError) {
-                return reject(new AuthError(error.message))
-              } else {
-                return reject(new Error(error.message))
-              }
-            }
-          })
+        //descargar la firma publica JWKS
+        try {
+          const { body } = await CognitoAuth.requestGetAsync(options)//, (err, resp, body) => {
+          if (!body || !body.keys) {
+            Logger.message(Level.error, {}, transacion_id, "Formato de JWSK")
+            throw new Error("Formato de JWSK no es el adecuado")
+          }
+          const pems: { [key: string]: string } = {}
+          for (let key of body.keys) {
+            pems[key.kid] = jwkToPem(key)
+          }
+          await fs.promises.writeFile(`/usr/${id_client}.pem`, JSON.stringify(pems))
+          Logger.message(Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica guardada")
+          // resolve(pems)
+          output = pems
+        }
+        catch (err) {
+          Logger.message(Level.error, {}, transacion_id, err as any)
+          throw new Error("No se pudo descargar el JWKS")
+        }
+        // if (err) {
+        //   Logger.message(Level.error, {}, transacion_id, err)
+        //   return reject(new Error("No se pudo descargar el JWKS"))
+        // }
 
-      } else { //leer la firma publica
-        Logger.message(Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica leída")
-        let sign = JSON.parse(fs.readFileSync(`/usr/${id_client}.pem`, "utf-8"))
-        resolve(sign)
+        //})
       }
-    })
+      catch (error) {
+
+        if (error instanceof Error) {
+          Logger.message(Level.error, {}, transacion_id, "GetCliente")
+          if (error instanceof AuthError) {
+            throw new AuthError(error.message)
+          } else {
+            throw new Error(error.message)
+          }
+        }
+      }
+
+    } else { //leer la firma publica
+      Logger.message(Level.debug, { file: `/usr/${id_client}.pem` }, transacion_id, "Firma publica leída")
+      let sign = JSON.parse(await fs.promises.readFile(`/usr/${id_client}.pem`, "utf-8"))
+      output = sign
+      // resolve(sign)
+    }
+    // })
+    return output
   }
 
   private static hapiVerifyToken = async (pem: { [key: string]: string }, request: Hapi.Request, h: Hapi.ResponseToolkit) => {
