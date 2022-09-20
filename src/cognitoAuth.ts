@@ -56,6 +56,10 @@ export class CognitoAuth {
   public static processHapi = async (request: Hapi.Request, h: Hapi.ResponseToolkit): Promise<HapiCustomAuthError | null> => {
     const id = v4()
     let result = null
+
+    request.headers[HEADER_AUTHORIZATION] = request.headers['Authorization'] || request.headers['authorization']
+
+    // const authorizationHeader = request.headers['Authorization'] || request.headers['authorization']
     try {
       if (!request.headers[HEADER_AUTHORIZATION] || !request.headers[HEADER_CLIENT]) {
         throw new AuthError("Es necesario los Headers de Authorization y client_nexux")
