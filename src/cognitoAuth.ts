@@ -57,6 +57,7 @@ export type HapiCustomAuthError = {
 function getClientesTemporal() {
   const map = new Map<string, any>()
   if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'prd') {
+    console.log('usando credenciales de cliente dev')
     map.set('tdp', {
       id: 'tdp',
       aws_cognito_clientapp_id: '4kpq25sb27tutk54v0j7if0jpf',
@@ -68,7 +69,8 @@ function getClientesTemporal() {
       aws_cognito_userpool_id: 'us-east-1_KpauCTxDx'
     })
   }
-  else if( GLOBAL_STAGE === 'qa'){
+  else if (GLOBAL_STAGE === 'qa') {
+    console.log('usando credenciales de cliente qa')
     map.set('tdp', {
       id: 'tdp',
       aws_cognito_clientapp_id: 'qlcer7iotg4iveqo3n5jl58iq',
