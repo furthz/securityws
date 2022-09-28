@@ -18,7 +18,7 @@ const HEADER_CLIENT = 'client_nexux'
 const HEADER_AUTHORIZATION = 'Authorization'
 const ALLOWED_TOKEN_USES = [TOKEN_USE_ACCESS, TOKEN_USE_ID]
 
-if (process.env.STAGE === 'test') {
+if (process.env.STAGE === 'test' || process.env.STAGE === 'Test') {
   process.env.STAGE = 'qa'
 }
 let stage = process.env.STAGE || ''
