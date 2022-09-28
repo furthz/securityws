@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/furthz/securityws/compare/v1.0.35...v1.1.0) (2022-09-28)
+
+
+### Features
+
+* authorization con minusculas ([404223d](https://github.com/furthz/securityws/commit/404223da00f3090f7d099ae62e54c0541a7bb027))
+* build ([11d03db](https://github.com/furthz/securityws/commit/11d03dbbc72d76cd67c44e22d66a28fc7e62301d))
+* mejora en reconocimiento de errores ([7353d45](https://github.com/furthz/securityws/commit/7353d45c4d51959bb2c2f9afecab726d3fcf1ed5))
+* processHapi ([910ac19](https://github.com/furthz/securityws/commit/910ac19c64027f487f7c9a7ac3d80b6c660aa738))
+
+
+### Bug Fixes
+
+* await getCliente mock ([437f491](https://github.com/furthz/securityws/commit/437f49180aca9aaeda862ed3ed68ace218aec6f8))
+* clientes ([b3138b2](https://github.com/furthz/securityws/commit/b3138b2f398c5ba2294ea92df5adbf281a6f944f))
+* Correccion valor variable STAGE ([a76875c](https://github.com/furthz/securityws/commit/a76875c9c181f51bedbe648fb1029b6e6606a36d))
+* qa cliente ([f3a75df](https://github.com/furthz/securityws/commit/f3a75dfc1cb13d072c5817d099d704c673721cb4))
+* qa cliente ([c1c3dea](https://github.com/furthz/securityws/commit/c1c3deada18ab4b7f87cd5d4f064dcf3cb1b173e))
+* referencia a tabla de cliente debe manejarse en base a STAGE ([62fe4b0](https://github.com/furthz/securityws/commit/62fe4b0ab50baf8caca1771337348c76af828f27))
+
 ### [1.0.35](https://github.com/furthz/securityws/compare/v1.0.34...v1.0.35) (2022-04-21)
 
 
