@@ -27,7 +27,7 @@ const TOKEN_USE_ID = 'id';
 const HEADER_CLIENT = 'client_nexux';
 const HEADER_AUTHORIZATION = 'Authorization';
 const ALLOWED_TOKEN_USES = [TOKEN_USE_ACCESS, TOKEN_USE_ID];
-if (process.env.STAGE === 'test') {
+if (process.env.STAGE === 'test' || process.env.STAGE === 'Test') {
     process.env.STAGE = 'qa';
 }
 let stage = process.env.STAGE || '';
@@ -39,11 +39,25 @@ class AuthError extends Error {
 }
 function getClientesTemporal() {
     const map = new Map();
-    if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'qa' || GLOBAL_STAGE === 'prd') {
+    if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'prd') {
+        console.log('usando credenciales de cliente dev');
         map.set('tdp', {
             id: 'tdp',
             aws_cognito_clientapp_id: '4kpq25sb27tutk54v0j7if0jpf',
             aws_cognito_userpool_id: 'us-east-1_5LjA8Pbem'
+        });
+        map.set('bn_ripley', {
+            id: 'bn_ripley',
+            aws_cognito_clientapp_id: '434gcllmokbpmj9qkhl37geh8v',
+            aws_cognito_userpool_id: 'us-east-1_KpauCTxDx'
+        });
+    }
+    else if (GLOBAL_STAGE === 'qa') {
+        console.log('usando credenciales de cliente qa');
+        map.set('tdp', {
+            id: 'tdp',
+            aws_cognito_clientapp_id: 'qlcer7iotg4iveqo3n5jl58iq',
+            aws_cognito_userpool_id: 'us-east-1_IYnEzSmYI'
         });
         map.set('bn_ripley', {
             id: 'bn_ripley',
