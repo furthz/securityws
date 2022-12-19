@@ -419,13 +419,13 @@ export class CognitoAuth {
         //Verificar que exista el token decodificado
         if (!decodedNotVerified) {
           Logger.message(Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido")
-          return reject(new AuthError('Authorization header contiene un token inválido'))
+          return reject(new AuthError('Authorization header contiene un token inválido 1'))
         }
 
         //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
         if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
           Logger.message(Level.error, { id_client, auth }, transacion_id, "el KID no coincide")
-          return reject(new AuthError("Authorization header contiene un token inválido"))
+          return reject(new AuthError("Authorization header contiene un token inválido 2"))
         }
 
         //Decodificar la firma con la Llave publica

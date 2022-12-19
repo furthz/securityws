@@ -370,12 +370,12 @@ CognitoAuth.verify = (pems, auth, id_client, transacion_id) => {
             //Verificar que exista el token decodificado
             if (!decodedNotVerified) {
                 nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "Authorization header contiene un token invalido");
-                return reject(new AuthError('Authorization header contiene un token inválido'));
+                return reject(new AuthError('Authorization header contiene un token inválido 1'));
             }
             //Validar que la KID coincida con JWSK (Que el token haya sido firmado con la llave publica del USER_POOL)
             if (!decodedNotVerified.header.kid || !pems[decodedNotVerified.header.kid]) {
                 nexuxlog_1.Logger.message(nexuxlog_1.Level.error, { id_client, auth }, transacion_id, "el KID no coincide");
-                return reject(new AuthError("Authorization header contiene un token inválido"));
+                return reject(new AuthError("Authorization header contiene un token inválido 2"));
             }
             //Decodificar la firma con la Llave publica
             jsonwebtoken_1.default.verify(token, pems[decodedNotVerified.header.kid], { issuer: ISSUER, maxAge: MAX_TOKEN_AGE }, (err, decodeAndVerified) => {
