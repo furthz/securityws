@@ -73,8 +73,8 @@ function getClientesTemporal() {
     console.log('usando credenciales de cliente prd')
     map.set('tdp', {
       id: 'tdp',
-      aws_cognito_clientapp_id: '4oo24m4u4eleoo944mdboqf0qq',
-      aws_cognito_userpool_id: 'us-east-1_cpu9PXa94'
+      aws_cognito_clientapp_id: '5hndc5r6a6e4pdact6lheip7qt',
+      aws_cognito_userpool_id: 'us-east-1_Rq493R6lV'
     })
     map.set('bn_ripley', {
       id: 'bn_ripley',
