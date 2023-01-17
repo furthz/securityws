@@ -39,7 +39,7 @@ class AuthError extends Error {
 }
 function getClientesTemporal() {
     const map = new Map();
-    if (GLOBAL_STAGE === 'dev' || GLOBAL_STAGE === 'prd') {
+    if (GLOBAL_STAGE === 'dev') {
         console.log('usando credenciales de cliente dev');
         map.set('tdp', {
             id: 'tdp',
@@ -50,6 +50,19 @@ function getClientesTemporal() {
             id: 'bn_ripley',
             aws_cognito_clientapp_id: '434gcllmokbpmj9qkhl37geh8v',
             aws_cognito_userpool_id: 'us-east-1_KpauCTxDx'
+        });
+    }
+    else if (GLOBAL_STAGE === 'prd') {
+        console.log('usando credenciales de cliente prd');
+        map.set('tdp', {
+            id: 'tdp',
+            aws_cognito_clientapp_id: '4oo24m4u4eleoo944mdboqf0qq',
+            aws_cognito_userpool_id: 'us-east-1_cpu9PXa94'
+        });
+        map.set('bn_ripley', {
+            id: 'bn_ripley',
+            aws_cognito_clientapp_id: '50uu4ojd6797t0gmhv4rh39u6h',
+            aws_cognito_userpool_id: 'us-east-1_JuYaUEN7T'
         });
     }
     else if (GLOBAL_STAGE === 'qa') {
